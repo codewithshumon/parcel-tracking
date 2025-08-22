@@ -1,10 +1,11 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { motion } from 'framer-motion';
 import RecentParcels from './RecentParcels';
 import { Parcel } from './Parcel';
+import { useRouter } from 'next/navigation';
 
 interface CustomerDashboardProps {
   initialParcels: Parcel[];
@@ -12,15 +13,7 @@ interface CustomerDashboardProps {
 
 const CustomerDashboard = ({ initialParcels }: CustomerDashboardProps) => {
   const [parcels, setParcels] = useState<Parcel[]>(initialParcels);
-  const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
-  const [newParcel, setNewParcel] = useState({
-    origin: '',
-    destination: '',
-    weight: '',
-    dimensions: '',
-    recipient: '',
-    recipientPhone: '',
-  });
+  const router = useRouter();
 
   // Animation variants
   const containerVariants = {
@@ -44,34 +37,10 @@ const CustomerDashboard = ({ initialParcels }: CustomerDashboardProps) => {
     }
   };
 
-  const handleBookParcel = (e: React.FormEvent) => {
-    e.preventDefault();
-    // In a real app, this would call an API
-    const newParcelObj: Parcel = {
-      id: (parcels.length + 1).toString(),
-      trackingNumber: `LT${Math.floor(100000000 + Math.random() * 900000000)}`,
-      status: 'pending',
-      origin: newParcel.origin,
-      destination: newParcel.destination,
-      estimatedDelivery: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-      createdAt: new Date().toISOString().split('T')[0],
-      weight: parseFloat(newParcel.weight),
-      dimensions: newParcel.dimensions,
-      recipient: newParcel.recipient,
-      recipientPhone: newParcel.recipientPhone,
-    };
-
-    setParcels([newParcelObj, ...parcels]);
-    setNewParcel({
-      origin: '',
-      destination: '',
-      weight: '',
-      dimensions: '',
-      recipient: '',
-      recipientPhone: '',
-    });
-    setIsBookingModalOpen(false);
+  const handleBookParcel = () => {
+    router.push('/customer/book-parcel');
   };
+
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -165,7 +134,7 @@ const CustomerDashboard = ({ initialParcels }: CustomerDashboardProps) => {
           className="fixed bottom-8 right-8"
         >
           <button
-            onClick={() => setIsBookingModalOpen(true)}
+            onClick={handleBookParcel}
             className="w-14 h-14 bg-blue-600 rounded-full shadow-lg flex items-center justify-center text-white hover:bg-blue-700 transition-colors duration-200"
           >
             <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
