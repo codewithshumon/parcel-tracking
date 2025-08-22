@@ -1,5 +1,5 @@
 import CustomerDashboard from "./components/CustomerDashboard";
-import { Parcel } from "./components/Parcel"; // Import the Parcel interface
+import { Parcel } from "./components/Parcel";
 
 const mockParcels: Parcel[] = [
   {
