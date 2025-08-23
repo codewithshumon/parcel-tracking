@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable react-hooks/exhaustive-deps */
 'use client';
 
@@ -5,6 +7,19 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from "framer-motion";
 import Link from 'next/link';
+
+interface RegisterData {
+  firstName: string;
+  lastName: string;
+  email: string;
+  password: string;
+  role: string;
+}
+
+interface ApiError {
+  message: string;
+  statusCode: number;
+}
 
 const Signup = () => {
   const [formData, setFormData] = useState({
@@ -22,7 +37,8 @@ const Signup = () => {
     email: "",
     password: "",
     confirmPassword: "",
-    agreeToTerms: ""
+    agreeToTerms: "",
+    general: ""
   });
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
@@ -57,6 +73,10 @@ const Signup = () => {
       newErrors.agreeToTerms = "";
       hasChanges = true;
     }
+    if (errors.general) {
+      newErrors.general = "";
+      hasChanges = true;
+    }
 
     if (hasChanges) {
       setErrors(newErrors);
@@ -71,7 +91,8 @@ const Signup = () => {
       email: "",
       password: "",
       confirmPassword: "",
-      agreeToTerms: ""
+      agreeToTerms: "",
+      general: ""
     };
 
     if (!formData.firstName) {
@@ -135,12 +156,35 @@ const Signup = () => {
 
     setIsLoading(true);
 
-    // Simulate API call
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+      const registerData: RegisterData = {
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        email: formData.email,
+        password: formData.password,
+        role: formData.role
+      };
+
+      const response = await fetch('http://localhost:5000/auth/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(registerData),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Registration failed');
+      }
+
+      // Store the access token in localStorage
+      localStorage.setItem('accessToken', data.accessToken);
+      localStorage.setItem('user', JSON.stringify(data.user));
 
       // Redirect based on role
-      switch (formData.role) {
+      switch (data.user.role) {
         case "admin":
           router.push("/admin/dashboard");
           break;
@@ -150,8 +194,12 @@ const Signup = () => {
         default:
           router.push("/customer/dashboard");
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Signup failed:", error);
+      setErrors(prev => ({
+        ...prev,
+        general: error.message || "An error occurred during registration. Please try again."
+      }));
     } finally {
       setIsLoading(false);
     }
@@ -161,7 +209,8 @@ const Signup = () => {
     setIsGoogleLoading(true);
     
     try {
-      // Simulate Google authentication
+      // For now, simulate Google authentication
+      // You can implement actual Google OAuth later
       await new Promise((resolve) => setTimeout(resolve, 1500));
       
       // Redirect based on role after Google sign-up
@@ -177,6 +226,10 @@ const Signup = () => {
       }
     } catch (error) {
       console.error("Google sign-up failed:", error);
+      setErrors(prev => ({
+        ...prev,
+        general: "Google sign-up failed. Please try again."
+      }));
     } finally {
       setIsGoogleLoading(false);
     }
@@ -228,6 +281,20 @@ const Signup = () => {
         </div>
 
         <div className="mt-8">
+          {/* Error message */}
+          <AnimatePresence>
+            {errors.general && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-md text-sm"
+              >
+                {errors.general}
+              </motion.div>
+            )}
+          </AnimatePresence>
+
           <div className="mb-6">
             <motion.button
               initial={{ opacity: 0, y: 10 }}
@@ -309,7 +376,7 @@ const Signup = () => {
                   name="role"
                   value={formData.role}
                   onChange={handleChange}
-                  className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md transition-colors duration-200"
+                  className="block w-full pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md transition-colors duration-200"
                 >
                   <option value="customer">Customer</option>
                   <option value="agent">Delivery Agent</option>
