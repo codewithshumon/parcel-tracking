@@ -20,23 +20,39 @@ import { UserModule } from './user/user.module';
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => {
-        const dbCaCert = configService.get('DB_CA_CERT');
+        const connectionString = configService.get('DATABASE_URL');
         
+        if (connectionString) {
+          // Use the Neon connection string directly
+          return {
+            type: 'postgres',
+            url: connectionString,
+            entities: [__dirname + '/**/*.entity{.ts,.js}'],
+            synchronize: configService.get('NODE_ENV') !== 'production',
+            // Neon handles SSL through the connection string
+            ssl: true,
+            extra: {
+              // Connection pool settings for Neon
+              max: 20,
+              connectionTimeoutMillis: 10000,
+              idleTimeoutMillis: 30000,
+            },
+            // Enable logging for development
+            logging: configService.get('NODE_ENV') === 'development',
+          };
+        }
+        
+        // Fallback to individual parameters (if needed)
         return {
           type: 'postgres',
-          host: configService.get('DB_HOST') || 'localhost',
-          port: configService.get('DB_PORT') ? parseInt(configService.get('DB_PORT')!, 10) : 5432,
-          username: configService.get('DB_USERNAME') || 'postgres',
-          password: configService.get('DB_PASSWORD') || '',
-          database: configService.get('DB_NAME') || 'test',
+          host: configService.get('DB_HOST'),
+          port: parseInt(configService.get('DB_PORT')!, 10),
+          username: configService.get('DB_USERNAME'),
+          password: configService.get('DB_PASSWORD'),
+          database: configService.get('DB_NAME'),
           entities: [__dirname + '/**/*.entity{.ts,.js}'],
           synchronize: configService.get('NODE_ENV') !== 'production',
-          ssl: dbCaCert ? { 
-            rejectUnauthorized: true,
-            ca: dbCaCert.replace(/\\n/g, '\n')
-          } : { 
-            rejectUnauthorized: false 
-          },
+          ssl: true,
         };
       },
     }),
